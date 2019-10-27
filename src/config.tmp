@@ -1,0 +1,11 @@
+[SERVER]
+url=https://rplexus.net
+	
+
+[USER]
+name=ali
+auth_code=123
+
+
+[NODE]
+name=test
