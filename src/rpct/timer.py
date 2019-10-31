@@ -70,13 +70,13 @@ class Timer(object):
 
 
 
-	def _back(self):
+	async def _back(self):
 		if self._starttime > 0:
 			self.looptime = (((self._endtime - self._starttime)+self.delay)*1000)+self.min
 		if self.looptime == 0:	self.looptime = self.min
 		self._period.callback_time = self.looptime
 		self._starttime = int(time.time())
-		self._callback()
+		await self._callback()
 
 
 

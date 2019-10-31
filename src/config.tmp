@@ -1,11 +1,17 @@
 [SERVER]
 url=https://rplexus.net
-	
+
+[CLIENT]
+run_path=/var/rpclient
+log_file=/var/rpclient/rpct.log
+log_level=DEBUG
+key=
+cert=
 
 [USER]
-name=ali
-auth_code=123
-
+name=yourusername
+auth_type=CODE
+auth_code=mycode123
 
 [NODE]
-name=test
+name=yournodename

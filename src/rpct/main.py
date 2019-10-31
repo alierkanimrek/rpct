@@ -88,7 +88,9 @@ class RPCTMain(object):
             acode = self.conf.USER.auth_code, 
             uname = self.conf.USER.name, 
             nname = self.conf.NODE.name, 
-            log = self.log)
+            log = self.log,
+            key = self.conf.CLIENT.key,
+            cert = self.conf.CLIENT.cert)
         self.prepare()
         self.__log.i("Starting authentication...")
         self.__timer.start(self.__auth)
@@ -124,29 +126,27 @@ class RPCTMain(object):
 
 
 
-    def __auth(self):
+    async def __auth(self):
         self.__log.d("Trying authentication")
-        self.__conn.auth(self.__loginResult)
-
+        self.__timer.pause()
+        await self.__conn.auth(self.__authResult)
+        
 
 
 
     def __authResult(self, status, resp={}):
-        self.__conn.pause()
+        self.__timer.endtiming()
         if status:
-            self.__timer.endtiming()
-            self.__log.i("Authentication successful, starting ping...")
             stack = Stack()
             stack.load(resp["stack"])
             #tasklist = self.__get_command("tasklist", stack)
             print(stack.stack)
-        else:
-            self.__timer.endtiming(self.__timer.delay+1000)
-        self.__conn.play()
+            #self.__log.i("Authentication successful, starting ping...")
+        self.__timer.play()
 
 
 
 
     def __ping(self):
-        self.__log.d("Trying authentication")
-        self.__conn.auth(self.__loginResult)
+        self.__log.d("Ping")
+        self.__conn.ping(self.__pingResult)

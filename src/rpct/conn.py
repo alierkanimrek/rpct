@@ -22,7 +22,7 @@ from tornado.httpclient import HTTPRequest, AsyncHTTPClient
 from tornado.httputil import HTTPHeaders
 from tornado import escape
 
-from .msg import Stack
+from .msg import Stack, Message
 
 
 
@@ -32,9 +32,9 @@ from .msg import Stack
 
 
 URL = {
-    login: "/xhr/ctlogin",
-    ping: "/xhr/ctping",
-    up: "/xhr/ctup"}
+    "login": "/xhr/ctlogin",
+    "ping": "/xhr/ctping",
+    "up": "/xhr/ctup"}
 
 
 
@@ -47,43 +47,37 @@ class Connection(object):
 
 
 
-    def __init__(self, server, uname, nname, atype, acode, log):
+    def __init__(self, server, uname, nname, atype, acode, log, key, cert):
         self.log = log.job("Connection")
         self._server = server
-        self._authData = self.getJsonData(
-            {"code" : acode,
-            "uname" : uname,
-            "nname": nname})
+        self._authData = Stack()
+        self._source = {
+            "uname": uname, 
+            "nname" : nname,
+            "name": "",
+            "id": uname+"/"+nname+"/"}
+        self._authData.append(self._source, {"code" : acode})
         self._headers = HTTPHeaders({"content-type": "application/json"})
         self._request = HTTPRequest(
             url = "",
             method = "POST",
-            validate_cert = False,
             connect_timeout = 10,
             request_timeout = 10)
+        if(key):
+            self._request.client_key = key
+            self._request.client_cert = cert
+            self._request.validate_cert = False
         self.callback = None
 
 
 
 
-    def __run(self ):
-        AsyncHTTPClient().fetch( self._request, self._response)
-
-
-
-
-    def auth(self, cb):
-        self.callback = cb
-        self._request.url = self._server+URL.login
-        self.request.body = self._authData
-        self.__run()
-
-
-
-
-    def _response(self, response):
-        if response.error:
-            self.log.e("Connection error", str(response.error))
+    async def __run(self ):
+        http_client = AsyncHTTPClient()
+        try:
+            response = await http_client.fetch(self._request)
+        except Exception as e:
+            self.log.e(str(e))
             self.callback(False)
         else:
             try:
@@ -93,16 +87,27 @@ class Connection(object):
                     #self._request.set_header("nid", response.body)
                 self.callback(True, msg)
             except Exception as inst:
-                self.log.e("Decode error", type(inst), str(response.body))
+                self.log.e( type(inst), str(response.body))
                 self.callback(False)
 
 
 
 
-    def getJsonData(self, data):
-        #return(escape.utf8(json.dumps(data)))
-        return(escape.utf8(json.dumps(data,indent=4, separators=(',', ': '))))
+    async def auth(self, cb):
+        self.callback = cb
+        self._request.url = self._server+URL["login"]
+        self._request.body = self._msg(self._authData).json()
+        await self.__run()
 
+
+
+
+    def _msg(self, data):
+        return(
+            Message(
+                uname=self._source["uname"], 
+                nname=self._source["nname"], 
+                stack=data))
 
 
 
@@ -216,11 +221,19 @@ class Client(object):
 
     def __init__(self, conf):
         self._request = Request(conf)
+        self.__status = False
+
+    @property
+    def running(self):
+        return(self.__status)
 
 
 
 
-    def login(self, callback):
+    def auth(self, callback):
+        if self.__status:            return()
+
+        self.__status = True
         self._callback = callback
         AsyncHTTPClient().fetch( self._request.login(), 
             self._code_response)
@@ -243,11 +256,14 @@ class Client(object):
                     self._callback(False, response.body.decode())
         else:
             self._callback(False, str(response.error))
+        self.__status = False
 
 
 
 
     def ping(self, callback):
+        if self.__status:            return()        
+        self.__status = True
         self._callback = callback
         AsyncHTTPClient().fetch( self._request.ping(), 
             self._ping_response)
@@ -265,11 +281,13 @@ class Client(object):
                 self._callback(True, msg)
         else:
             self._callback(False, str(response.error))
+        self.__status = False
 
 
 
 
     def update(self, callback, data={}):
+        if self.__status:            return()
         self._callback = callback
         AsyncHTTPClient().fetch( self._request.update(data), 
             self._update_response)

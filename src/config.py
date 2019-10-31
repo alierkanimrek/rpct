@@ -40,6 +40,18 @@ CLIENT["log_level"] = {
 	"default" : "DEBUG"
 	}
 
+CLIENT["key"] = {
+	"type" : "str", 
+	"values": [],	
+	"default" : "client-key.pem"
+	}
+
+CLIENT["cert"] = {
+	"type" : "str", 
+	"values": [],	
+	"default" : "client-cert.pem"
+	}
+
 
 USER = {}
 
