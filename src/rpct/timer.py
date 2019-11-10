@@ -61,9 +61,9 @@ class Timer(object):
 
 	def start(self, cb):
 		self._callback = cb
-		self._starttime = 0
-		self._endtime = 0
-		self.looptime = self.min
+		#self._starttime = 0
+		#self._endtime = 0
+		#self.looptime = self.min
 		self._period.callback_time = self.looptime
 		self._period.start()
 
@@ -73,7 +73,7 @@ class Timer(object):
 	async def _back(self):
 		if self._starttime > 0:
 			self.looptime = (((self._endtime - self._starttime)+self.delay)*1000)+self.min
-		if self.looptime == 0:	self.looptime = self.min
+		if self.looptime <= 0:	self.looptime = self.min
 		self._period.callback_time = self.looptime
 		self._starttime = int(time.time())
 		await self._callback()

@@ -51,14 +51,14 @@ class Connection(object):
         self.log = log.job("Connection")
         self._server = server
         self._authData = Stack()
-        self._source = {
-            "uname": uname, 
-            "nname" : nname,
-            "name": "",
-            "id": uname+"/"+nname+"/"}
+        self._pingData = Stack()
+        self._source = {"uname": uname, "nname" : nname,"name": "", "id": uname+"/"+nname+"/"}
+        self._cmdSource = {"uname": uname, "nname" : nname,"name": "command", "id": uname+"/"+nname+"/command"}
         self._authData.append(self._source, {"code" : acode})
+        self._pingData.append(self._source, {})
         self._headers = HTTPHeaders({"content-type": "application/json"})
         self._request = HTTPRequest(
+            headers = self._headers,
             url = "",
             method = "POST",
             connect_timeout = 10,
@@ -72,9 +72,17 @@ class Connection(object):
 
 
 
-    async def __run(self ):
+
+
+
+
+
+    async def __run(self, url, body):
         http_client = AsyncHTTPClient()
         try:
+            self._request.headers = self._headers
+            self._request.url = url
+            self._request.body = body          
             response = await http_client.fetch(self._request)
         except Exception as e:
             self.log.e(str(e))
@@ -82,22 +90,39 @@ class Connection(object):
         else:
             try:
                 msg = json.loads(response.body.decode())
-                #if "Set-Cookie" in response.headers:
-                #    self._request.set_cookie(response.headers["Set-Cookie"])
-                    #self._request.set_header("nid", response.body)
-                self.callback(True, msg)
+                if "Set-Cookie" in response.headers:
+                    cookies = ""
+                    for setcookie in response.headers.get_list("Set-Cookie"):
+                        cookies += self._getCookie(setcookie)
+                    self._headers.add("Cookie", cookies)
             except Exception as inst:
-                self.log.e( type(inst), str(response.body))
+                self.log.e( type(inst), str(response.headers))
                 self.callback(False)
+            else:
+                self.callback(True, msg)
 
 
 
 
     async def auth(self, cb):
         self.callback = cb
-        self._request.url = self._server+URL["login"]
-        self._request.body = self._msg(self._authData).json()
-        await self.__run()
+        await self.__run(self._server+URL["login"], self._msg(self._authData).json())
+
+
+
+
+    async def ping(self, cb, cmd):
+        self.callback = cb
+        self._pingData.append(self._cmdSource, cmd.data)
+        await self.__run(self._server+URL["ping"], self._msg(self._pingData).json())
+
+
+
+
+    async def update(self, cb, cmd, stck):
+        self.callback = cb
+        stck.append(self._cmdSource, cmd.data)
+        await self.__run(self._server+URL["up"], self._msg(stck).json())
 
 
 
@@ -108,6 +133,26 @@ class Connection(object):
                 uname=self._source["uname"], 
                 nname=self._source["nname"], 
                 stack=data))
+
+
+
+
+    def _getCookie(self, setcookie):
+        name = ""
+        value = ""
+        a = setcookie.find("=")
+        l = setcookie.index("expires")
+        b = setcookie[:l].rfind(";")
+        name = setcookie[:a]
+        value = setcookie[a+1:b]
+        return("{name}={value}; ".format(name=name, value=value))
+
+
+
+
+
+
+
 
 
 

@@ -21,7 +21,7 @@ from .conf import KBConfig
 from .log import KBLogger
 from .timer import Timer
 from .conn import Connection
-from .msg import Stack
+from .msg import Stack, CommandData
 
 
 
@@ -82,6 +82,10 @@ class RPCTMain(object):
         self.__mainloop = mainloop
         self.__log = mainloop.log.job("Main")
         self.__timer = Timer()
+        self.__tasklist = []
+        self.__followup = []
+        self.__taskData = Stack()
+        self.__cmds = CommandData()
         self.__conn = Connection(
             server = self.conf.SERVER.url,
             atype = self.conf.USER.auth_type, 
@@ -104,26 +108,56 @@ class RPCTMain(object):
     def log(self):
         return(self.__mainloop.log)
 
+    @property
+    def tasklist(self):
+        return(self.__tasklist)
 
+    @property
+    def followup(self):
+        return(self.__followup)
+
+    def setTask(self, tname, data):
+        if(tname in self.__tasklist):
+            self.__taskData.append({
+                "uname": self.conf.USER.name, 
+                "nname" : self.conf.NODE.name, 
+                "name": tname, 
+                "id": self.conf.USER.name+"/"+self.conf.NODE.name+"/"+tname},
+                data)
+    
+
+    def getTask(self, tname):
+        return(self.__taskData.data(self.conf.USER.name+"/"+self.conf.NODE.name+"/"+tname))
+
+
+    def updateTask(self, tname, data):
+        if(type(data) == type({})):
+            self.__taskData.update(self.conf.USER.name+"/"+self.conf.NODE.name+"/"+tname, data)
+            if(tname not in self.__tasklist):
+                self.__log.w("Task name not found", tname)
     #
     #
     #Initializing
     def prepare(self):
         pass        
     #Ready for update
-    def ready(self):
+    async def ready(self):
         pass
     #Runs after login as a thread
-    def wheel(self):        
+    async def wheel(self):        
         pass
     #Updates data before every up
-    def pre_update(self):
+    async def pre_update(self):
         pass
     #Runs after every up, so messages contains commands and followed tasks data
-    def post_update(self, cmds, tasks):
+    async def post_update(self, cmds, tasks):
         pass
 
 
+
+
+    def taskAlias(self, tname):
+        return(TaskAlias(self, tname))
 
 
     async def __auth(self):
@@ -136,17 +170,118 @@ class RPCTMain(object):
 
     def __authResult(self, status, resp={}):
         self.__timer.endtiming()
+        stack = Stack()
         if status:
-            stack = Stack()
             stack.load(resp["stack"])
-            #tasklist = self.__get_command("tasklist", stack)
-            print(stack.stack)
-            #self.__log.i("Authentication successful, starting ping...")
+            if(stack.data("root/server/xhrclientauth")["result"] == True):
+                self.__log.i("Authentication successful, starting ping...")
+                self.__parseCommands(stack)
+                self.__timer.start(self.__ping)
+                return()
+            else:
+                self.__log.i("Authentication error...")
         self.__timer.play()
 
 
 
 
-    def __ping(self):
-        self.__log.d("Ping")
-        self.__conn.ping(self.__pingResult)
+    def __parseCommands(self, stack):
+        try:    
+            self.__tasklist = stack.data("root/server/command")["tasklist"]
+            self.__log.d("Tasklist update", self.tasklist)
+            for tname in self.__tasklist:
+                if(not self.getTask(tname)):
+                    self.setTask(tname, {})
+        except: pass
+        try:    
+            self.__followup = stack.data("root/server/command")["followup"]
+            self.__log.d("Followings update", self.followup)
+            self.__cmds.cmd("followup", self.__followup)
+        except: pass
+
+
+
+
+
+    async def __ping(self):
+        self.__timer.pause()
+        await self.__conn.ping(self.__pingResult, self.__cmds)
+
+
+
+
+    def __pingResult(self, status, resp={}):
+        self.__timer.endtiming()
+        stack = Stack()
+        if status:
+            stack.load(resp["stack"])
+            if(stack.data("root/server/xhrclientping")["result"] == True):
+                if(stack.data("root/server/xhrclientping")["awake"] == True):
+                    self.__log.i("Awakening...")
+                    self.__parseCommands(stack)
+                    self.__timer.start(self.__update)
+                    return()
+                else:
+                    self.__timer.play()
+        else:
+            self.__timer.start(self.__auth)
+            
+
+
+
+
+    async def __update(self):
+        self.__timer.pause()
+        await self.pre_update()
+        await self.__conn.update(self.__updateResult, self.__cmds, self.__taskData)
+
+
+
+
+    def __updateResult(self, status, resp={}):
+        self.__timer.endtiming()
+        stack = Stack()
+        if status:
+            stack.load(resp["stack"])
+            if(stack.data("root/server/xhrclientupdate")["result"] == True):
+                if(stack.data("root/server/xhrclientupdate")["awake"] == True):
+                    self.__parseCommands(stack)
+                    self.__timer.play()
+                    return()
+                else:
+                    self.__log.d("Sleeping...")
+        self.__timer.start(self.__ping)
+
+
+
+
+
+
+
+
+class TaskAlias(object):
+
+
+
+
+    def __init__(self, manager, tname):
+        super(TaskAlias, self).__init__()
+        self.__manager = manager
+        self.__name = tname
+
+
+    @property
+    def name(self):
+        return(self.__name)
+    
+    
+    @property
+    def data(self):
+        return(self.__manager.getTask(self.__name))
+
+
+    @data.setter
+    def data(self, data):
+        self.__manager.updateTask(self.__name, data)
+
+    

@@ -62,10 +62,14 @@ class Stack(object):
                     return()
         else:
             return()
-        source["data"] = data
-        id = get_uri(source["uname"], source["nname"], source["name"])
-        if not self.data(id):
-            self._stack[id] = source
+        src = {
+            "uname": source["uname"],
+            "nname" : source["nname"],
+            "name": source["name"],
+            "id": get_uri(source["uname"], source["nname"], source["name"]),
+            "data": data}
+        if not self.data(src["id"]):
+            self._stack[src["id"]] = src
 
 
 
