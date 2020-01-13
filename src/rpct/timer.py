@@ -30,7 +30,7 @@ class Timer(object):
 
 
 
-	min = 2000
+	min = 4000
 
 
 

@@ -23,7 +23,7 @@
 
 from rpct import RPCTMain, ctRun
 
-
+import random
 
 
 
@@ -37,35 +37,45 @@ class MyNode(RPCTMain):
 
     #Initializing
     def prepare(self):
-        pass        
+        self.test = self.taskAlias("test")
+        self.test2 = self.taskAlias("test2")
+        self.test3 = self.taskAlias("test3") 
+        self.test4 = self.taskAlias("test4") 
 
 
 
 
     #Ready for update
-    def ready(self):
+    async def ready(self):
         pass
 
 
 
 
     #Runs after login as a thread
-    def wheel(self):        
+    async def wheel(self):        
         pass
 
 
 
 
     #Updates data before every up
-    def pre_update(self):
-        pass
+    async def pre_update(self):
+        self.test.data = False
+        self.test2.data = False
+
+        if(random.randrange(10) > 5):   self.test.data = True 
+        if(random.randrange(10) > 5):   self.test2.data = True 
+        
+        self.test3.data = random.randrange(1000)
+        self.test4.data = random.randrange(10000)
 
 
 
 
     #Runs after every up, so messages contains commands and followed tasks data
-    def post_update(self, cmds, tasks):
-        pass
+    async def post_update(self, tasks, ftasks):
+        print("comd:", tasks)
 
 
 

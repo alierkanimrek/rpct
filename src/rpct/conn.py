@@ -72,11 +72,6 @@ class Connection(object):
 
 
 
-
-
-
-
-
     async def __run(self, url, body):
         http_client = AsyncHTTPClient()
         try:
@@ -86,7 +81,7 @@ class Connection(object):
             response = await http_client.fetch(self._request)
         except Exception as e:
             self.log.e(str(e))
-            self.callback(False)
+            await self.callback(False)
         else:
             try:
                 msg = json.loads(response.body.decode())
@@ -97,9 +92,9 @@ class Connection(object):
                     self._headers.add("Cookie", cookies)
             except Exception as inst:
                 self.log.e( type(inst), str(response.headers))
-                self.callback(False)
+                await self.callback(False)
             else:
-                self.callback(True, msg)
+                await self.callback(True, msg)
 
 
 

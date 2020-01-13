@@ -17,6 +17,7 @@
 
 from tornado import httpclient, ioloop, gen
 
+
 from .conf import KBConfig
 from .log import KBLogger
 from .timer import Timer
@@ -84,6 +85,7 @@ class RPCTMain(object):
         self.__timer = Timer()
         self.__tasklist = []
         self.__followup = []
+        self.__usertask = {}
         self.__taskData = Stack()
         self.__cmds = CommandData()
         self.__conn = Connection(
@@ -131,10 +133,9 @@ class RPCTMain(object):
 
 
     def updateTask(self, tname, data):
-        if(type(data) == type({})):
-            self.__taskData.update(self.conf.USER.name+"/"+self.conf.NODE.name+"/"+tname, data)
-            if(tname not in self.__tasklist):
-                self.__log.w("Task name not found", tname)
+        self.__taskData.update(self.conf.USER.name+"/"+self.conf.NODE.name+"/"+tname, data)
+        if(tname not in self.__tasklist):
+            self.__log.w("Task name not found", tname)
     #
     #
     #Initializing
@@ -150,7 +151,7 @@ class RPCTMain(object):
     async def pre_update(self):
         pass
     #Runs after every up, so messages contains commands and followed tasks data
-    async def post_update(self, cmds, tasks):
+    async def post_update(self):
         pass
 
 
@@ -168,14 +169,14 @@ class RPCTMain(object):
 
 
 
-    def __authResult(self, status, resp={}):
+    async def __authResult(self, status, resp={}):
         self.__timer.endtiming()
         stack = Stack()
         if status:
             stack.load(resp["stack"])
             if(stack.data("root/server/xhrclientauth")["result"] == True):
                 self.__log.i("Authentication successful, starting ping...")
-                self.__parseCommands(stack)
+                await self.__parseCommands(stack)
                 self.__timer.start(self.__ping)
                 return()
             else:
@@ -185,7 +186,7 @@ class RPCTMain(object):
 
 
 
-    def __parseCommands(self, stack):
+    async def __parseCommands(self, stack):
         try:    
             self.__tasklist = stack.data("root/server/command")["tasklist"]
             self.__log.d("Tasklist update", self.tasklist)
@@ -197,6 +198,9 @@ class RPCTMain(object):
             self.__followup = stack.data("root/server/command")["followup"]
             self.__log.d("Followings update", self.followup)
             self.__cmds.cmd("followup", self.__followup)
+        except: pass
+        try:    
+            self.__usertask = stack.data("root/server/command")["task"]
         except: pass
 
 
@@ -210,7 +214,7 @@ class RPCTMain(object):
 
 
 
-    def __pingResult(self, status, resp={}):
+    async def __pingResult(self, status, resp={}):
         self.__timer.endtiming()
         stack = Stack()
         if status:
@@ -218,7 +222,7 @@ class RPCTMain(object):
             if(stack.data("root/server/xhrclientping")["result"] == True):
                 if(stack.data("root/server/xhrclientping")["awake"] == True):
                     self.__log.i("Awakening...")
-                    self.__parseCommands(stack)
+                    await self.__parseCommands(stack)
                     self.__timer.start(self.__update)
                     return()
                 else:
@@ -232,20 +236,35 @@ class RPCTMain(object):
 
     async def __update(self):
         self.__timer.pause()
+        sendData = {}
+        sendStack = Stack()
+        
         await self.pre_update()
-        await self.__conn.update(self.__updateResult, self.__cmds, self.__taskData)
+        # Convert data as {"taskname" : {task data...} ,... }
+        for tdata in self.__taskData.stack:
+            sendData[tdata["name"]] = tdata["data"]
+        sendStack.append({
+            "uname": self.conf.USER.name, 
+            "nname" : self.conf.NODE.name, 
+            "name": "", 
+            "id": self.conf.USER.name+"/"+self.conf.NODE.name},
+            sendData)
+        await self.__conn.update(self.__updateResult, self.__cmds, sendStack)
 
 
 
 
-    def __updateResult(self, status, resp={}):
+    async def __updateResult(self, status, resp={}):
         self.__timer.endtiming()
         stack = Stack()
         if status:
             stack.load(resp["stack"])
             if(stack.data("root/server/xhrclientupdate")["result"] == True):
                 if(stack.data("root/server/xhrclientupdate")["awake"] == True):
-                    self.__parseCommands(stack)
+                    await self.__parseCommands(stack)
+                    #print(self.__mainloop.current())
+                    await self.post_update(self.__usertask, {})
+                    self.__usertask = {}
                     self.__timer.play()
                     return()
                 else:
