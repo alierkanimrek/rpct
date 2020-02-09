@@ -74,8 +74,8 @@ class MyNode(RPCTMain):
 
 
     #Runs after every up, so messages contains commands and followed tasks data
-    async def post_update(self, tasks, ftasks):
-        print("comd:", tasks)
+    async def post_update(self):
+        print("Follow up:", self.followup)
 
 
 

@@ -197,7 +197,7 @@ class RPCTMain(object):
         try:    
             self.__followup = stack.data("root/server/command")["followup"]
             self.__log.d("Followings update", self.followup)
-            self.__cmds.cmd("followup", self.__followup)
+            self.__cmds.cmd("followup", list(self.__followup.keys()))
         except: pass
         try:    
             self.__usertask = stack.data("root/server/command")["task"]
@@ -263,7 +263,7 @@ class RPCTMain(object):
                 if(stack.data("root/server/xhrclientupdate")["awake"] == True):
                     await self.__parseCommands(stack)
                     #print(self.__mainloop.current())
-                    await self.post_update(self.__usertask, {})
+                    await self.post_update()
                     self.__usertask = {}
                     self.__timer.play()
                     return()

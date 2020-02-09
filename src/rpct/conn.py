@@ -116,7 +116,8 @@ class Connection(object):
 
     async def update(self, cb, cmd, stck):
         self.callback = cb
-        stck.append(self._cmdSource, cmd.data)
+        #stck.append(self._cmdSource, cmd.data)
+        stck.append(self._cmdSource, {})
         await self.__run(self._server+URL["up"], self._msg(stck).json())
 
 
