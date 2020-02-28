@@ -196,7 +196,7 @@ class RPCTMain(object):
         except: pass
         try:    
             self.__followup = stack.data("root/server/command")["followup"]
-            self.__log.d("Followings update", self.followup)
+            #self.__log.d("Followings update", self.followup)
             self.__cmds.cmd("followup", list(self.__followup.keys()))
         except: pass
         try:    

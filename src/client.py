@@ -22,6 +22,7 @@
 #if spath not in sys.path:    sys.path.append(spath)
 
 from rpct import RPCTMain, ctRun
+from axones import NixSys
 
 import random
 
@@ -37,6 +38,7 @@ class MyNode(RPCTMain):
 
     #Initializing
     def prepare(self):
+        self.sys = NixSys()
         self.test = self.taskAlias("test")
         self.test2 = self.taskAlias("test2")
         self.test3 = self.taskAlias("test3") 
@@ -61,6 +63,8 @@ class MyNode(RPCTMain):
 
     #Updates data before every up
     async def pre_update(self):
+        await self.sys.update()
+        print(self.sys.data)
         self.test.data = False
         self.test2.data = False
 

@@ -152,6 +152,7 @@ class NixSys(object):
 
 
 
+    @property
     def data(self):
         data = {
             "name" : self.name,
