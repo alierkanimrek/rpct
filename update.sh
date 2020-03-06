@@ -2,7 +2,7 @@
 
 path=$(dirname $(readlink -f $0))
 repo=$path/.update
-backup=$path/.backup/"$(date +%y%m%d%k%M)"
+backup=$path/.backup/"$(date +%y%m%d%H%M%S)"
 
 cd $path
 
