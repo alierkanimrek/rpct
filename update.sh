@@ -5,7 +5,7 @@ repo=$path/.update
 backup=$path/.backup/"$(date +%y%m%d%H%M%S)"
 
 cd $path
-
+mkdir -p rpct
 mkdir -p $repo
 mkdir -p $backup
 rm -rf $repo/*
@@ -26,4 +26,5 @@ for d in $dirs
 do
     cp -aRv $d axones
 done
-cp $repo/rpct/src/* .
+cp -v $repo/rpct/src/axones/* axones
+cp -v $repo/rpct/src/*.py .

@@ -2,16 +2,16 @@
 url=https://rplexus.net
 
 [CLIENT]
-run_path=/var/rpclient
-log_file=/var/rpclient/rpct.log
+run_path=/home/admin/rpclient/client
+log_file=client.log
 log_level=DEBUG
 key=
 cert=
 
 [USER]
-name=yourusername
+name=
 auth_type=CODE
-auth_code=mycode123
+auth_code=
 
 [NODE]
-name=yournodename
+name=
