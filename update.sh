@@ -6,6 +6,7 @@ backup=$path/.backup/"$(date +%y%m%d%H%M%S)"
 
 cd $path
 mkdir -p rpct
+mkdir -p axones
 mkdir -p $repo
 mkdir -p $backup
 rm -rf $repo/*
@@ -28,3 +29,4 @@ do
 done
 cp -v $repo/rpct/src/axones/* axones
 cp -v $repo/rpct/src/*.py .
+cp -v $repo/rpct/src/config.tmp .
