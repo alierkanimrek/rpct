@@ -1,14 +1,10 @@
 #!/bin/bash
 
 rpct=~/rpclient
-updir=$rpct/.update
-mkdir -p $updir
+mkdir -p $rpct
 
-cd $updir
-git clone https://github.com/alierkanimrek/rpct.git
+curl https://raw.githubusercontent.com/alierkanimrek/rpct/master/upservice.sh>$rpct/upservice.sh
+curl https://raw.githubusercontent.com/alierkanimrek/rpct/master/update.sh>$rpct/update.sh
 
-cd rpct
-cp -v $updir/rpct/upservice.sh .
-cp -v $updir/rpct/rpclient.service .
-cd ..
+cd $rpct
 bash ./update.sh

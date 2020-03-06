@@ -3,18 +3,18 @@
 path=$(dirname $(readlink -f $0))
 repo=$path/.update
 backup=$path/.backup/"$(date +%y%m%d%H%M%S)"
-
 cd $path
-mkdir -p rpct
-mkdir -p axones
-mkdir -p $repo
-mkdir -p $backup
-rm -rf $repo/*
 
 #Backup
+mkdir -p $backup
 cp -aRv $path/rpct $backup
 cp -aRv $path/axones $backup
 cp * $backup
+
+mkdir -p rpct
+mkdir -p axones
+mkdir -p $repo
+rm -rf $repo/*
 
 #Update
 cd $repo
