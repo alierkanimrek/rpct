@@ -118,6 +118,12 @@ class RPCTMain(object):
     def followup(self):
         return(self.__followup)
 
+
+    @property
+    def usertask(self):
+        return(self.__usertask)
+
+
     def setTask(self, tname, data):
         if(tname in self.__tasklist):
             self.__taskData.append({
@@ -187,7 +193,7 @@ class RPCTMain(object):
 
 
     async def __parseCommands(self, stack):
-        try:    
+        try:
             self.__tasklist = stack.data("root/server/command")["tasklist"]
             self.__log.d("Tasklist update", self.tasklist)
             for tname in self.__tasklist:
@@ -209,6 +215,7 @@ class RPCTMain(object):
 
     async def __ping(self):
         self.__timer.pause()
+        #Send followup uri list
         await self.__conn.ping(self.__pingResult, self.__cmds)
 
 
@@ -249,7 +256,7 @@ class RPCTMain(object):
             "name": "", 
             "id": self.conf.USER.name+"/"+self.conf.NODE.name},
             sendData)
-        await self.__conn.update(self.__updateResult, self.__cmds, sendStack)
+        await self.__conn.update(self.__updateResult, sendStack)
 
 
 
@@ -262,7 +269,6 @@ class RPCTMain(object):
             if(stack.data("root/server/xhrclientupdate")["result"] == True):
                 if(stack.data("root/server/xhrclientupdate")["awake"] == True):
                     await self.__parseCommands(stack)
-                    #print(self.__mainloop.current())
                     await self.post_update()
                     self.__usertask = {}
                     self.__timer.play()

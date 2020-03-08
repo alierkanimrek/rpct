@@ -16,10 +16,6 @@
 
 
 
-#import sys
-#import os
-#spath = os.path.dirname(os.path.realpath(__file__))
-#if spath not in sys.path:    sys.path.append(spath)
 
 from rpct import RPCTMain, ctRun
 from axones import NixSys, NixCat
@@ -80,21 +76,26 @@ class MyNode(RPCTMain):
         if(random.randrange(10) > 5):   self.test.data = True 
         if(random.randrange(10) > 5):   self.test2.data = True 
         
-        self.test3.data = self.sys.data["cpu_usage"]
-        self.test4.data = self.sys.data["mem_free"]
-        self.test5.data = self.sys.data["mem_total"]
-        self.test6.data = self.mlog.data["utf-8"]
-        self.test7.data = self.file
-        self.test8.data = self.row
+        self.test3.data = self.sys.cpu_usage
+        self.test4.data = self.sys.mem_free
+        self.test5.data = self.sys.mem_total
+        self.test6.data = self.mlog.utf8
+        self.test7.data = self.mlog.file
+        self.test8.data = self.mlog.row
 
 
 
 
     #Runs after every up, so messages contains commands and followed tasks data
+    # self.usertask = Tasks from user interface as dict
+    # self.followup = Follow up tasks from other nodes as dict
     async def post_update(self):
-        pass
         #print("Follow up:", self.followup)
-
+        #print("User tasks:", self.usertask.keys)
+        if("test8" in self.usertask):
+            self.mlog.row = self.usertask["test8"]
+        if("test7" in self.usertask):
+            self.mlog.file = self.usertask["test7"]
 
 
 

@@ -44,6 +44,12 @@ class NixSys(object):
         self.cpu_model = ""
         self.cpu_processor = ""
         self.cpu_mhz = ""
+        self.mem_total = 0
+        self.mem_free = 0
+        self.cpu_usage = 0        
+
+        self._prev_idle = 0
+        self._prev_total = 0
 
         #CPU INFO
         cpuinfo = open('/proc/cpuinfo')
@@ -60,11 +66,6 @@ class NixSys(object):
                 elif line[0] == "cpu MHz":
                     self.cpu_mhz = line[1]
 
-        self._prev_idle = 0
-        self._prev_total = 0
-        self.mem_total = 0
-        self.mem_free = 0
-        self.cpu_usage = 0
         #await self._cpu()
         #await self._ram()
 
@@ -148,22 +149,3 @@ class NixSys(object):
     async def update(self):
         r = await self._ram()
         r = await self._cpu()
-
-
-
-
-    @property
-    def data(self):
-        data = {
-            "name" : self.name,
-            "release" : self.release,
-            "version" : self.version,
-            "machine" : self.machine,
-            "arch" : self.arch,
-            "cpu_model" : self.cpu_model,
-            "cpu_processor" : self.cpu_processor,
-            "cpu_mhz" : self.cpu_mhz,
-            "mem_total" : self.mem_total,
-            "mem_free": self.mem_free,
-            "cpu_usage" : self.cpu_usage}
-        return(data)
