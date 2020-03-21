@@ -29,7 +29,7 @@
 
 from tornado import httpclient, ioloop, gen
 
-
+import sys
 from .conf import KBConfig
 from .log import KBLogger
 from .timer import Timer
@@ -110,8 +110,8 @@ class RPCTMain(object):
             key = self.conf.CLIENT.key,
             cert = self.conf.CLIENT.cert)
         self.prepare()
-        self.__log.i("Starting authentication...")
         self.__timer.start(self.__auth)
+
        
 
     @property
@@ -153,14 +153,17 @@ class RPCTMain(object):
     def updateTask(self, tname, data):
         self.__taskData.update(self.conf.USER.name+"/"+self.conf.NODE.name+"/"+tname, data)
         if(tname not in self.__tasklist):
-            self.__log.w("Task name not found", tname)
+            self.__log.e("Task name not found", tname)
     #
     #
     #Initializing
     def prepare(self):
         pass        
-    #Ready for update
-    async def ready(self):
+    #Client awakening
+    async def awake(self):
+        pass
+    #Client sleeping
+    async def sleep(self):
         pass
     #Runs after login as a thread
     async def wheel(self):        
@@ -180,7 +183,6 @@ class RPCTMain(object):
 
 
     async def __auth(self):
-        self.__log.d("Trying authentication")
         self.__timer.pause()
         await self.__conn.auth(self.__authResult)
         
@@ -193,12 +195,12 @@ class RPCTMain(object):
         if status:
             stack.load(resp["stack"])
             if(stack.data("root/server/xhrclientauth")["result"] == True):
-                self.__log.i("Authentication successful, starting ping...")
+                self.__log.i("Authentication successful.")
                 await self.__parseCommands(stack)
                 self.__timer.start(self.__ping)
                 return()
             else:
-                self.__log.i("Authentication error...")
+                self.__log.w("Authentication error...")
         self.__timer.play()
 
 
@@ -242,6 +244,7 @@ class RPCTMain(object):
                 if(stack.data("root/server/xhrclientping")["awake"] == True):
                     self.__log.i("Awakening...")
                     await self.__parseCommands(stack)
+                    await self.awake()
                     self.__timer.start(self.__update)
                     return()
                 else:
@@ -286,7 +289,8 @@ class RPCTMain(object):
                     self.__timer.play()
                     return()
                 else:
-                    self.__log.d("Sleeping...")
+                    self.__log.i("Sleeping...")
+                    await self.sleep()
         self.__timer.start(self.__ping)
 
 

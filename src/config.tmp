@@ -2,9 +2,9 @@
 url=https://rplexus.net
 
 [CLIENT]
-run_path=/home/admin/rpclient/client
+run_path=
 log_file=client.log
-log_level=DEBUG
+log_level=INFO
 key=
 cert=
 

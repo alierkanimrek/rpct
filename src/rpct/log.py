@@ -29,6 +29,8 @@
 
 
 
+import sys
+import traceback
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from logging import handlers
@@ -164,6 +166,7 @@ class KBLoggerJob:
         self._logger = logger
         self._job = name
         self._statics = args
+        self._lastmsg = ""
 
 
     def i(self, msg, *args):
@@ -171,6 +174,12 @@ class KBLoggerJob:
 
     def e(self, msg, *args):
         self.write("E", msg, *args)
+
+    def e_tb(self, msg, inst, *args):
+        self.e(msg, *args)
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        last = traceback.format_tb(exc_traceback)[len(traceback.format_tb(exc_traceback))-1]
+        self.d(type(inst), inst.args, last)
 
     def c(self, msg, *args):
         self.write("C", msg, *args)
@@ -187,24 +196,27 @@ class KBLoggerJob:
         msg = self._job
         for i in msglist:
             msg += " - " + str(i)
-        if typ == "C":
-            self._log.critical(msg)
-        if typ == "E":
-            self._logger.log.error(msg)
-        if typ == "W":
-            self._logger.log.warning(msg)
-        if typ == "I":
-            self._logger.log.info(msg)
-        if typ == "D":
+        if self._lastmsg != msg:
+            if typ == "C":
+                self._log.critical(msg)
+            if typ == "E":
+                self._logger.log.error(msg)
+            if typ == "W":
+                self._logger.log.warning(msg)
+            if typ == "I":
+                self._logger.log.info(msg)
+            if typ == "D":
+                self._logger.log.debug(msg)
+            if typ == "N":
+                self._logger.log.notset(msg)
+            self._lastmsg = msg
+        else:
             self._logger.log.debug(msg)
-        if typ == "N":
-            self._logger.log.notset(msg)
 
 
 
 
 
-"""
 def test():
     log = KBLogger("test.log", "Test")
     log.level = "INFO"
@@ -215,5 +227,4 @@ def test():
     testjob.i("Info test message...")
     testjob2.e("Error test message...")
 
-test()
-"""
+#test()
