@@ -178,6 +178,14 @@ class RPCTMain(object):
 
 
 
+    async def __dowheel(self):
+        while True:
+            await self.wheel()
+            await gen.sleep(0.01)
+    
+
+
+
     def taskAlias(self, tname):
         return(TaskAlias(self, tname))
 
@@ -197,6 +205,7 @@ class RPCTMain(object):
             if(stack.data("root/server/xhrclientauth")["result"] == True):
                 self.__log.i("Authentication successful.")
                 await self.__parseCommands(stack)
+                self.__mainloop.current().spawn_callback(self.__dowheel)
                 self.__timer.start(self.__ping)
                 return()
             else:

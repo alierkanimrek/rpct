@@ -31,7 +31,7 @@
 
 
 from rpct import RPCTMain, ctRun
-import random
+import random, time
 
 
 
@@ -53,9 +53,9 @@ class MyNode(RPCTMain):
 
     #Runs after login as a thread
     async def wheel(self):        
+        #Do something
+        #time.sleep(1)
         pass
-        #while True:
-
 
 
 

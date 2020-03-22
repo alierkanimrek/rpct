@@ -58,7 +58,7 @@ class NixSys(object):
         self.cpu_mhz = ""
         self.mem_total = 0
         self.mem_free = 0
-        self.cpu_usage = 0        
+        self.cpu_usage = 1        
 
         self._prev_idle = 0
         self._prev_total = 0
@@ -124,7 +124,10 @@ class NixSys(object):
 
         total = current_total - self._prev_total
         idled = current_idle - self._prev_idle
-        self.cpu_usage =  int((total - idled)/total*100)
+        try:
+            self.cpu_usage =  int((total - idled)/total*100)
+        except:
+            print(total, idled)
         self._prev_idle = current_idle
         self._prev_total = current_total
 
