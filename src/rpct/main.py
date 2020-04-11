@@ -198,9 +198,9 @@ class RPCTMain(object):
 
 
     async def __authResult(self, status, resp={}):
-        self.__timer.endtiming()
         stack = Stack()
         if status:
+            self.__timer.endtiming()
             stack.load(resp["stack"])
             if(stack.data("root/server/xhrclientauth")["result"] == True):
                 self.__log.i("Authentication successful.")
@@ -210,6 +210,7 @@ class RPCTMain(object):
                 return()
             else:
                 self.__log.w("Authentication error...")
+        self.__timer.endtiming(30)
         self.__timer.play()
 
 
@@ -245,9 +246,9 @@ class RPCTMain(object):
 
 
     async def __pingResult(self, status, resp={}):
-        self.__timer.endtiming()
         stack = Stack()
         if status:
+            self.__timer.endtiming()
             stack.load(resp["stack"])
             if(stack.data("root/server/xhrclientping")["result"] == True):
                 if(stack.data("root/server/xhrclientping")["awake"] == True):
@@ -259,6 +260,7 @@ class RPCTMain(object):
                 else:
                     self.__timer.play()
         else:
+            self.__timer.endtiming(10)
             self.__timer.start(self.__auth)
             
 

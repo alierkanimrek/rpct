@@ -92,7 +92,7 @@ class Connection(object):
             self._request.body = body          
             response = await http_client.fetch(self._request)
         except Exception as e:
-            self.log.e(str(e))
+            self.log.e("Request error", str(e))
             await self.callback(False)
         else:
             try:
@@ -103,7 +103,7 @@ class Connection(object):
                         cookies += self._getCookie(setcookie)
                     self._headers.add("Cookie", cookies)
             except Exception as inst:
-                self.log.e( type(inst), str(response.headers))
+                self.log.e("Response error", str(inst), response.body.decode())
                 await self.callback(False)
             else:
                 await self.callback(True, msg)
@@ -299,6 +299,7 @@ class Client(object):
             try:
                 msg = json.loads(response.body.decode())
             except:
+                self.log.e("Response message error", response.body.decode())
                 self._callback(False, response.body.decode())
             else:
                 if "Set-Cookie" in response.headers:
@@ -308,6 +309,7 @@ class Client(object):
                 else:
                     self._callback(False, response.body.decode())
         else:
+            self.log.e("Server error", str(response.error))
             self._callback(False, str(response.error))
         self.__status = False
 
@@ -329,10 +331,12 @@ class Client(object):
             try:
                 msg = json.loads(response.body.decode())
             except:
+                self.log.e("Response message error", response.body.decode())
                 self._callback(False, response.body.decode())
             else:
                 self._callback(True, msg)
         else:
+            self.log.e("Server error", str(response.error))
             self._callback(False, str(response.error))
         self.__status = False
 
@@ -356,6 +360,8 @@ class Client(object):
                 stack.load(msg["stack"])
                 self._callback(True, stack)
             except:
+                self.log.e("Response message error", response.body.decode())
                 self._callback(False, response.body.decode())
         else:
+            self.log.e("Server error", str(response.error))
             self._callback(False, str(response.error))
