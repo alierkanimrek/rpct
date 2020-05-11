@@ -94,6 +94,7 @@ class RPCTMain(object):
     def __init__(self, mainloop):
         self.__mainloop = mainloop
         self.__log = mainloop.log.job("Main")
+        self.__clog = mainloop.log.job("Client")
         self.__timer = Timer()
         self.__tasklist = []
         self.__followup = []
@@ -106,21 +107,34 @@ class RPCTMain(object):
             acode = self.conf.USER.auth_code, 
             uname = self.conf.USER.name, 
             nname = self.conf.NODE.name, 
-            log = self.log,
+            log = self.logger,
             key = self.conf.CLIENT.key,
             cert = self.conf.CLIENT.cert)
+        self.__amap = []
         self.prepare()
         self.__timer.start(self.__auth)
+        
 
-       
+
+    @property
+    def amap(self):
+        return(self.__amap)
+
+    @amap.setter
+    def amap(self, amap):
+        self.__amap = amap     
 
     @property
     def conf(self):
         return(self.__mainloop.conf)
 
     @property
-    def log(self):
+    def logger(self):
         return(self.__mainloop.log)
+
+    @property
+    def log(self):
+        return(self.__clog)
 
     @property
     def tasklist(self):
@@ -154,6 +168,17 @@ class RPCTMain(object):
         self.__taskData.update(self.conf.USER.name+"/"+self.conf.NODE.name+"/"+tname, data)
         if(tname not in self.__tasklist):
             self.__log.e("Task name not found", tname)
+
+    
+    async def amap_update(self):
+        for m in self.__amap:
+            try:    
+                getattr(m[1], m[2])
+                self.updateTask(m[0], getattr(m[1], m[2]))
+            except: 
+                self.__log.w("AutoMap failed", str(m))
+
+
     #
     #
     #Initializing
@@ -174,7 +199,7 @@ class RPCTMain(object):
     #Runs after every up, so messages contains commands and followed tasks data
     async def post_update(self):
         pass
-
+    
 
 
 
@@ -271,8 +296,8 @@ class RPCTMain(object):
         self.__timer.pause()
         sendData = {}
         sendStack = Stack()
-        
         await self.pre_update()
+        await self.amap_update()
         # Convert data as {"taskname" : {task data...} ,... }
         for tdata in self.__taskData.stack:
             sendData[tdata["name"]] = tdata["data"]
