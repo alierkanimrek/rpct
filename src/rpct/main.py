@@ -74,10 +74,29 @@ def ctRun(handler):
         mainloop = ioloop.IOLoop.instance()
         mainloop.conf = conf
         mainloop.log = log
+        mainloop.confReload = ioloop.PeriodicCallback(confReloader, 60000)
+        mainloop.add_callback(confReloader)        
         application = handler(mainloop)
         stage1.i("Starting...")
         mainloop.start()
 
+
+
+
+
+
+
+async def confReloader():
+    loop = ioloop.IOLoop.current()
+    if not loop.confReload.is_running():
+        loop.confReload.start()
+    else:
+        try:
+            loop.conf.reload()
+            loop.log.level = loop.conf.CLIENT.log_level
+        except Exception as inst:
+            log = loop.log.job("ConfReloader")
+            log.e_tb("Conf updating failed", inst)
 
 
 
@@ -113,7 +132,7 @@ class RPCTMain(object):
         self.__amap = []
         self.prepare()
         self.__timer.start(self.__auth)
-        
+
 
 
     @property
