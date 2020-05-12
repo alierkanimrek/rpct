@@ -79,6 +79,8 @@ def ctRun(handler):
         application = handler(mainloop)
         stage1.i("Starting...")
         mainloop.start()
+        if handler.isRestart:
+            sys.exit(1)
 
 
 
@@ -130,6 +132,7 @@ class RPCTMain(object):
             key = self.conf.CLIENT.key,
             cert = self.conf.CLIENT.cert)
         self.__amap = []
+        self.__restart = False
         self.prepare()
         self.__timer.start(self.__auth)
 
@@ -196,6 +199,11 @@ class RPCTMain(object):
                 self.updateTask(m[0], getattr(m[1], m[2]))
             except: 
                 self.__log.w("AutoMap failed", str(m))
+
+
+    @property
+    def isRestart(self):
+        return(self.__restart)
 
 
     #
@@ -349,6 +357,18 @@ class RPCTMain(object):
         self.__timer.start(self.__ping)
 
 
+
+
+    def restart(self):
+        self.__log.i("Restarting...")
+        self.__restart = True
+        self.__mainloop.stop()
+
+
+
+    def exit(self):
+        self.__log.i("Exiting...")
+        self.__mainloop.stop()
 
 
 
