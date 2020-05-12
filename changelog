@@ -1,0 +1,16 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.2] - 2020-05-12
+### Added
+- .amap : Auto Update Variable Mapping.
+- .log  : Logging for client
+- Configuration auto reload feature (auto load every 60sec)
+- NixNet Axone
+- run.sh Running client, user must edit script name
+- restart() For restart client, client must be run via run.sh or as a service
